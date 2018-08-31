@@ -51,8 +51,16 @@
             onFadeOut: undefined,
             onClick: undefined
         },
-        activeAlerts = 0,
-        activeAlertsElems = [],
+        activeAlertsElems = {
+            left: {
+                top: [],
+                bottom: []
+            },
+            right: {
+                top: [],
+                bottom: []
+            }
+        },
         extend,
         fadeOut,
         setOpacity;
@@ -90,29 +98,25 @@
             setOpacity(element, opacity - fadeStep);
             setTimeout(function() { fadeOut(element, opacity - fadeStep, fadeStep, fadeSpeed, options); }, fadeSpeed);
         } else {
-            for(i = 0; i < activeAlertsElems.length; i++) {
-                if(activeAlertsElems[i] === element) {
+            for(i = 0; i < activeAlertsElems[options.xOrientation][options.yOrientation].length; i++) {
+                if(activeAlertsElems[options.xOrientation][options.yOrientation][i] === element) {
                     removeIndex = i;
-                } else if (removeIndex !== null && i > removeIndex) {
+                } else if (removeIndex !== null) {
                     var diff = +options.styles.margin.replace('px', '') + (+options.styles.height.replace('px', ''));
                     if (options.yOrientation === 'top') {
-                        activeAlertsElems[i].style.top = (+activeAlertsElems[i].style.top.replace('px', '') - diff) + 'px';
+                        activeAlertsElems[options.xOrientation][options.yOrientation][i].style.top = (+activeAlertsElems[options.xOrientation][options.yOrientation][i].style.top.replace('px', '') - diff) + 'px';
                     }
                     else {
-                        activeAlertsElems[i].style.bottom = (+activeAlertsElems[i].style.bottom.replace('px', '') - diff) + 'px';
+                        activeAlertsElems[options.xOrientation][options.yOrientation][i].style.bottom = (+activeAlertsElems[options.xOrientation][options.yOrientation][i].style.bottom.replace('px', '') - diff) + 'px';
                     }
                 }
             }
-            
-            activeAlertsElems.splice(i, 1);
+
+            activeAlertsElems[options.xOrientation][options.yOrientation].splice(removeIndex, 1);
             element.parentNode.removeChild(element);
-            --activeAlerts;
 
             if (typeof options.onFadeOut === 'function') {
                 options.onFadeOut(options);
-            }
-            else {
-                console.error("Bad onFadeOut.");
             }
         }
     };
@@ -129,22 +133,16 @@
             conf = { 'text' : conf };
         }
 
-        ++activeAlerts;
-
         options = extend(defaults, conf);
 
         container = document.createElement('div');
 
         if (options.id && typeof options.id === 'string') {
             container.id = options.id;
-        } else {
-            console.error('Bad id.');
         }
 
         if (options.class && typeof options.class === 'string') {
             container.className = options.class;
-        } else {
-            console.error('Bad class.');
         }
 
         if (typeof options.onClick === 'function') {
@@ -160,10 +158,6 @@
                 fadeOut(container, 100, options.fadeStep, options.fadeSpeed, options);
              },
              (+options.duration > 0 ? options.duration : 3) * 1000);
-
-            if (options.onClick !== undefined) {
-                console.error('Bad onClick.');
-            }  
         }
 
         container.style.position = 'absolute';
@@ -172,8 +166,7 @@
             container.style.left = '0px';
         } else if (options.xOrientation === 'right') {
             container.style.right = '0px';
-        }
-        else {
+        } else {
             return console.error('Bad xOrientation.');
         }
 
@@ -182,9 +175,9 @@
         }
 
         if(options.yOrientation === 'top') {
-            container.style.top = ((+options.styles.height.replace('px', '') * (activeAlerts - 1)) + (+options.styles.margin.replace('px', '') * (activeAlerts - 1))) + "px";
+            container.style.top = ((+options.styles.height.replace('px', '') * activeAlertsElems[options.xOrientation][options.yOrientation].length) + (+options.styles.margin.replace('px', '') * activeAlertsElems[options.xOrientation][options.yOrientation].length)) + "px";
         } else if (options.yOrientation === 'bottom') {
-            container.style.bottom = ((+options.styles.height.replace('px', '') * (activeAlerts - 1)) + (+options.styles.margin.replace('px', '') * (activeAlerts - 1))) + "px";
+            container.style.bottom = ((+options.styles.height.replace('px', '') * activeAlertsElems[options.xOrientation][options.yOrientation].length) + (+options.styles.margin.replace('px', '') * activeAlertsElems[options.xOrientation][options.yOrientation].length)) + "px";
         } else {
             return console.error('Bad yOrientation.');
         }
@@ -193,13 +186,13 @@
             container.style[propertyName] = options.styles[propertyName];
         }
 
-        if (options.text != '') {
+        if (options.text !== '') {
             container.appendChild(document.createTextNode(options.text));
         } else {
             return console.error('Bad text.');
         }
 
-        activeAlertsElems.push(container);
+        activeAlertsElems[options.xOrientation][options.yOrientation].push(container);
 
         document.body.appendChild(container);
     };
